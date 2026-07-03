@@ -1,3 +1,96 @@
+# gtwy-node — Agent Instructions
+
+You are an AI agent working on the **gtwy-node** codebase — the backend / Node gateway service (Node.js).
+
+---
+
+## Core Ideology: Continuous Improvement
+
+Every change is an opportunity to leave the system better than you found it.
+When you touch a module, also fix or flag **nearby issues that would be worsened** by the change — broken types, stale docs, misplaced logic, leaked side effects, unhandled errors. Do not silently walk past problems you can see.
+
+---
+
+## Mandatory Workflow — No Exceptions
+
+You must follow this sequence for **every task**, no matter how small.
+
+### Step 1 — Read the Docs First
+
+Before writing a single line of code or forming a plan, read the relevant documentation:
+
+| Area of change | File to read |
+|---|---|
+| General architecture & rules | `docs/AI_INSTRUCTIONS.md` |
+| Service architecture | `docs/architecture.md` |
+
+If the area does not map to a doc file, read the closest match and note the gap.
+
+### Step 2 — Write a Plan
+
+Produce a written plan **before touching any file**. The plan must cover:
+
+1. **What** — one sentence describing the change.
+2. **Why** — the user's goal or the problem being solved.
+3. **Docs consulted** — list the files you read in Step 1.
+4. **Files to change** — list every file you expect to create or modify, with a one-line reason each.
+5. **Side effects** — list anything in the system that could be impacted (routes, services, DB schema, API contracts, downstream consumers, docs).
+6. **Continuous-improvement items** — list any adjacent issues you noticed that should be fixed or flagged as part of this change (unhandled errors, missing validation, stale docs, misplaced logic, etc.).
+7. **Docs to update** — which `docs/` files need updating after the code change.
+
+Format the plan as a numbered, human-readable list. Do not use vague language ("update things", "fix stuff") — be specific about file names and the exact change.
+
+### Step 3 — Get Approval
+
+**Stop. Do not write code.**
+
+Present the plan to the user and wait for explicit approval.
+- If the user says "yes", "approved", "go ahead", or equivalent → proceed to Step 4.
+- If the user asks for changes → revise the plan and present again.
+- If any part of the plan is unclear or conflicts with existing code → ask a clarifying question instead of guessing.
+
+### Step 4 — Implement
+
+Implement exactly what was approved. Do not expand scope mid-implementation without pausing and updating the plan.
+
+Rules that apply during implementation (defer to `docs/AI_INSTRUCTIONS.md` for project specifics):
+- Keep the separation of concerns — routes/controllers/services/data layers stay distinct.
+- Validate and sanitize all external input at the boundary.
+- Handle errors explicitly with proper async/await try-catch; never swallow errors silently.
+- Never hardcode secrets or credentials — use environment/config.
+- Prefer existing utilities, middleware, and helpers over creating new ones.
+- Do not introduce new libraries unless the user explicitly asked.
+
+### Step 5 — Update Docs
+
+After every code change, update all `docs/` files listed in the plan's "Docs to update" section.
+If the change revealed that a doc is missing, create `docs/modules/<MODULE_NAME>_README_AI.md` following the structure of existing module docs.
+**A task is not complete until docs are updated.**
+
+---
+
+## Handling Uncertainty
+
+- If the user's request is ambiguous → ask one targeted clarifying question before forming a plan.
+- If the request conflicts with architecture rules → surface the conflict in the plan and ask the user how to resolve it.
+- If you are unsure whether an existing utility, service, or middleware already covers the need → search the codebase before creating anything new.
+- Never guess. Never assume. Pause and ask.
+
+---
+
+## What "Continuous Improvement" Means in Practice
+
+When you are in Step 2, actively look for:
+- Missing input validation or error handling in the files you are reading.
+- Stale or missing entries in the relevant `docs/` file.
+- Business logic that belongs in a service layer but is currently in a route/controller.
+- Hardcoded values that should be configuration.
+- Missing or outdated tests for the code you touch.
+
+Add these to the plan's **Continuous-improvement items** section. Implement them only if the user approves them as part of the plan. Do not silently sneak in unrelated changes.
+
+---
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 
