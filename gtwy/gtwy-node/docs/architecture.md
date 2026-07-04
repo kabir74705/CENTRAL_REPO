@@ -8,10 +8,28 @@ GTWY.AI is an AI middleware platform that helps SaaS products add AI fast—with
 
 **Entry Point – `src/index.js`**
 
-- Bootstraps Express with `express-async-errors`, CORS, JSON parsing, and a `/healthcheck`.
-- Connects to MongoDB using `config/config.js` and loads Postgres/Timescale models via `models/index.js`.
-- Registers every route module (agents, chat, rag, metrics, utils, etc.) so each feature has a predictable base path.
-- Sets up system middleware (`responseMiddleware`, `notFound`, `errorHandler`), initializes cron jobs, model-configuration watchers, cache warmers, and graceful shutdown hooks.
+- Bootstraps Express with `express-async-errors`, CORS, JSON parsing, and operational probes.
+- Attaches a per-request `X-Request-Id` (reuses inbound header or generates a UUID); exposes it as `req.requestId` for logging and tracing downstream.
+- Sets baseline security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) on every response.
+- Logs `[requestId] METHOD path status durationMs` on every response finish; tracks `activeRequests` (in-flight count).
+- Rejects new requests with `503` once graceful shutdown has started.
+- Connects to MongoDB (with event listeners for `connected`, `error`, `disconnected`) and loads Postgres/Timescale models.
+- Registers every route module so each feature has a predictable base path.
+- Sets up system middleware (`responseMiddleware`, `notFound`, `errorHandler`), initializes cron jobs, model-configuration watchers, and cache warmers.
+
+**Operational endpoints (all return JSON)**
+
+| Endpoint | Purpose | Healthy response |
+|---|---|---|
+| `GET /live` | Liveness — process is running (no DB check) | `200 { status: "alive" }` |
+| `GET /ready` | Readiness — DB connected, not shutting down | `200 { status: "ready" }` |
+| `GET /healthcheck` | Full health for operators | `200 { status: "ok", version, uptimeSeconds, startedAt, mongo, port, activeRequests }` |
+| `GET /metrics` | Runtime process stats | `200 { memory, cpu, eventLoopLagMs, activeRequests, uptimeSeconds }` |
+
+- `/ready` returns `502` while shutting down, `503` when MongoDB is unavailable.
+- `/healthcheck` returns `503` with `status: "degraded"` when unhealthy.
+- `SERVICE_VERSION` env var overrides the reported version (default `v1.4`).
+- `SHUTDOWN_TIMEOUT_MS` env var caps graceful shutdown duration (default `30000 ms`); forces `exit(1)` if drain takes too long.
 
 ## Request Lifecycle & Middleware
 
@@ -54,7 +72,7 @@ Whenever you add a feature, mirror the existing pattern: create/update a service
 - **Atatus APM – `src/atatus.js`** activates telemetry in production.
 - **Centralized logging – `src/logger.js`** uses Winston with environment-aware formatting; prefer `logger` over `console`.
 - **Model configuration cache – `src/services/utils/loadModelConfigs.js`** preloads model metadata and schedules change streams for live refresh (critical for `suggestModel`, validation, etc.).
-- **Graceful shutdown + health-checks** are centralized in `src/index.js`, so recycle those patterns when adding new long-lived connections.
+- **Graceful shutdown – `src/index.js`** on `SIGINT`/`SIGTERM`/`SIGQUIT`: stops cron jobs, drains queue consumers, closes HTTP server, closes MongoDB connection, then `exit(0)`. Forces `exit(1)` if shutdown exceeds `SHUTDOWN_TIMEOUT_MS`. Recycle this pattern when adding new long-lived connections.
 
 ---
 
