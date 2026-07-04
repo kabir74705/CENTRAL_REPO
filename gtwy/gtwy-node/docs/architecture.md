@@ -8,10 +8,24 @@ GTWY.AI is an AI middleware platform that helps SaaS products add AI fast—with
 
 **Entry Point – `src/index.js`**
 
-- Bootstraps Express with `express-async-errors`, CORS, JSON parsing, and a `/healthcheck`.
+- Bootstraps Express with `express-async-errors`, CORS, JSON parsing, and operational probes.
+- Assigns a per-request `X-Request-Id` (reuses inbound header when provided, otherwise generates a UUID) and exposes it on `req.requestId` for downstream logging/tracing.
+- Rejects new requests with `503` once graceful shutdown has started.
 - Connects to MongoDB using `config/config.js` and loads Postgres/Timescale models via `models/index.js`.
 - Registers every route module (agents, chat, rag, metrics, utils, etc.) so each feature has a predictable base path.
 - Sets up system middleware (`responseMiddleware`, `notFound`, `errorHandler`), initializes cron jobs, model-configuration watchers, cache warmers, and graceful shutdown hooks.
+
+**Operational endpoints (all JSON)**
+
+| Endpoint | Purpose | Healthy response |
+|---|---|---|
+| `GET /live` | Liveness — process is running | `200 { status: "alive" }` |
+| `GET /ready` | Readiness — MongoDB connected, not shutting down | `200 { status: "ready" }` |
+| `GET /healthcheck` | Detailed health for operators | `200 { status: "ok", version, uptimeSeconds, startedAt, mongo, port }` |
+
+- `/ready` returns `502` while shutting down and `503` when MongoDB is unavailable.
+- `/healthcheck` returns `503` with `status: "degraded"` when MongoDB is down or shutdown is in progress.
+- `SERVICE_VERSION` env var overrides the reported version (default `v1.3`).
 
 ## Request Lifecycle & Middleware
 
@@ -53,8 +67,10 @@ Whenever you add a feature, mirror the existing pattern: create/update a service
 
 - **Atatus APM – `src/atatus.js`** activates telemetry in production.
 - **Centralized logging – `src/logger.js`** uses Winston with environment-aware formatting; prefer `logger` over `console`.
+- **Request tracing – `src/index.js`** sets `X-Request-Id` on every response; propagate `req.requestId` when logging errors in controllers/services.
 - **Model configuration cache – `src/services/utils/loadModelConfigs.js`** preloads model metadata and schedules change streams for live refresh (critical for `suggestModel`, validation, etc.).
-- **Graceful shutdown + health-checks** are centralized in `src/index.js`, so recycle those patterns when adding new long-lived connections.
+- **Graceful shutdown – `src/index.js`** on `SIGINT`/`SIGTERM`/`SIGQUIT`: marks `isShuttingDown`, stops cron jobs, drains queue consumers, closes the HTTP server, then closes the MongoDB connection before `process.exit(0)`. New requests receive `503` during shutdown.
+- **Load balancer timeouts – `src/index.js`** sets `keepAliveTimeout` (10m + 5s) and `headersTimeout` to stay ahead of upstream idle timeouts.
 
 ---
 
