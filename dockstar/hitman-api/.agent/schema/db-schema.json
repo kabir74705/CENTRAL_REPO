@@ -1,0 +1,222 @@
+{
+    "models": {
+      "Collection": {
+        "table": "collections",
+        "fields": {
+          "id": "STRING(30) (PK)",
+          "name": "STRING(80) (Unique)",
+          "description": "TEXT",
+          "orgId": "STRING(30)",
+          "isPublic": "BOOLEAN (Default: false)",
+          "customDomain": "STRING (Unique)",
+          "path": "STRING",
+          "docProperties": "JSON",
+          "gtmId": "STRING(30)",
+          "theme": "STRING(30)",
+          "environment": "JSON",
+          "favicon": "TEXT",
+          "runCollection": "JSON",
+          "createdBy": "INTEGER",
+          "updatedBy": "INTEGER",
+          "orgDetails": "JSON",
+          "meta": "JSON",
+          "type": "STRING (Default: 'page')",
+          "categories": "ARRAY(STRING(100))"
+        },
+        "associations": ["hasMany Page", "hasMany UrlMapping", "hasMany Utm"]
+      },
+      "Page": {
+        "table": "pages",
+        "fields": {
+          "id": "STRING(30) (PK)",
+          "urlName": "TEXT",
+          "name": "TEXT",
+          "publishedName": "STRING",
+          "contents": "TEXT",
+          "parentId": "STRING(30) (FK -> pages.id)",
+          "child": "ARRAY(STRING)",
+          "state": "INTEGER",
+          "isPublished": "BOOLEAN",
+          "publishedPage": "JSONB",
+          "type": "INTEGER (0: invisible root, 1: parent, 3: subpage, 4: endpoint, 5: example)",
+          "collectionId": "STRING(30) (FK -> collections.id)",
+          "vectorIds": "ARRAY(STRING)",
+          "meta": "JSON",
+          "sharingMeta": "JSON",
+          "count": "JSON"
+        },
+        "associations": ["belongsTo Collection", "hasMany Endpoint", "hasMany PublishedVersion", "hasMany UrlMapping", "hasMany Feedback", "hasMany Utm"]
+      },
+      "Endpoint": {
+        "table": "endpoints",
+        "fields": {
+          "id": "STRING(30) (PK)",
+          "uri": "STRING",
+          "requestType": "STRING",
+          "bodyDescription": "JSON",
+          "body": "JSON",
+          "headers": "JSON",
+          "params": "JSON",
+          "pathVariables": "JSON",
+          "BASE_URL": "STRING",
+          "description": "TEXT",
+          "authorizationData": "JSON",
+          "sampleResponse": "JSON",
+          "protocolType": "INTEGER",
+          "URL": "STRING"
+        },
+        "associations": ["belongsTo Page (foreignKey: id)"]
+      },
+      "APIToken": {
+        "table": "api_tokens",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "name": "STRING(255)",
+          "token": "STRING(255) (Unique)",
+          "userId": "INTEGER",
+          "isActive": "BOOLEAN",
+          "orgId": "INTEGER",
+          "scopes": "ARRAY(STRING)",
+          "lastUse": "DATE"
+        }
+      },
+      "Changelog": {
+        "table": "changelogs",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "title": "STRING",
+          "content": "TEXT",
+          "version": "STRING",
+          "collectionId": "STRING(30) (FK)",
+          "tags": "ARRAY(STRING)",
+          "published_data": "JSONB",
+          "status": "INTEGER",
+          "meta": "JSONB"
+        },
+        "associations": ["belongsTo Collection"]
+      },
+      "CollectionPermission": {
+        "table": "collection_permissions",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "userId": "INTEGER (FK -> users.id)",
+          "collectionId": "STRING(255) (FK -> collections.id)",
+          "permission": "INTEGER (0: denied, 1: read, 2: read_write)",
+          "grantedBy": "INTEGER"
+        },
+        "associations": ["belongsTo Collection"]
+      },
+      "CronScheduler": {
+        "table": "cron_schedulers",
+        "fields": {
+          "id": "STRING(12) (PK)",
+          "cron_id": "STRING(12)",
+          "collectionId": "STRING(12) (FK)",
+          "cron_name": "STRING",
+          "cron_expression": "STRING",
+          "description": "TEXT",
+          "environmentId": "STRING(12)",
+          "emails": "ARRAY(TEXT)",
+          "endpointIds": "ARRAY(TEXT)",
+          "status": "INTEGER"
+        },
+        "associations": ["belongsTo Collection"]
+      },
+      "Environment": {
+        "table": "environments",
+        "fields": {
+          "id": "STRING (PK)",
+          "name": "STRING",
+          "userId": "INTEGER (Unique)",
+          "orgId": "INTEGER (Unique)",
+          "variables": "JSON"
+        }
+      },
+      "FAQ": {
+        "table": "faqs",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "question": "TEXT",
+          "answer": "TEXT",
+          "collectionId": "STRING(30) (FK)",
+          "resourceId": "STRING",
+          "tags": "ARRAY(STRING)",
+          "status": "INTEGER",
+          "parentId": "INTEGER",
+          "meta": "JSONB"
+        },
+        "associations": ["belongsTo Collection"]
+      },
+      "Feedback": {
+        "table": "feedback",
+        "fields": {
+          "pageId": "STRING(30) (PK, FK -> pages.id)",
+          "positiveCount": "JSONB",
+          "negativeCount": "JSONB",
+          "comments": "JSONB"
+        },
+        "associations": ["belongsTo Page"]
+      },
+      "Log": {
+        "table": "logs",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "eventType": "STRING",
+          "eventResponse": "JSON",
+          "errorResponse": "JSON",
+          "createdBy": "INTEGER",
+          "eventId": "STRING(20)"
+        }
+      },
+      "PremiumCollection": {
+        "table": "premiumCollections",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "collectionId": "STRING(30)",
+          "createdAt": "DATE"
+        }
+      },
+      "PublishedVersion": {
+        "table": "publishedversions",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "pageId": "STRING(30)",
+          "publishedData": "JSONB",
+          "isDefault": "BOOLEAN",
+          "versionNo": "INTEGER"
+        }
+      },
+      "URLMapping": {
+        "table": "urlMapping",
+        "fields": {
+          "id": "STRING (PK)",
+          "pageId": "STRING(255)",
+          "oldUrl": "STRING(255)",
+          "collectionId": "STRING(30)"
+        }
+      },
+      "UTM": {
+        "table": "utms",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "pageId": "STRING(30) (FK)",
+          "collectionId": "STRING(30)",
+          "parameters": "JSON",
+          "metadata": "JSON",
+          "count": "JSON"
+        },
+        "associations": ["belongsTo Page"]
+      },
+      "Webhook": {
+        "table": "webhooks",
+        "fields": {
+          "id": "INTEGER (PK)",
+          "url": "TEXT",
+          "name": "STRING",
+          "collectionId": "TEXT (PK)",
+          "action": "STRING(100) (PK)"
+        }
+      }
+    },
+    "notes": "Comprehensive schema list including all models in hitman-api for AI fast context retrieval."
+  }
