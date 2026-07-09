@@ -3,7 +3,7 @@
 
 export default {
   // Where to place this file inside the cloned repo
-  path: ".agents/mcp_config.json",
+  path: ".gemini/config/mcp.json",
 
   // Content to write at that path
   format: {

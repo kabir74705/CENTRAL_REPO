@@ -3,7 +3,7 @@
 
 export default {
   // Where to place this file inside the cloned repo
-  path: ".mcp.json",
+  path: ".codeium/windsurf/mcp_config.json",
 
   // Content to write at that path
   format: {

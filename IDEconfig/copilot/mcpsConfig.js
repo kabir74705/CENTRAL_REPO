@@ -3,7 +3,7 @@
 
 export default {
   // Where to place this file inside the cloned repo
-  path: ".vscode/mcp.json",
+  path: ".config/Code/User/mcp.json",
 
   // Content to write at that path
   format: {
